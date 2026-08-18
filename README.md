@@ -1,36 +1,83 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# PractoClone
 
-## Getting Started
+A full-stack Practo-style healthcare marketplace: patients search verified doctors and book
+in-clinic or video appointments, doctors manage their practice and slots, and admins run the
+whole platform (verification, articles, premium plans, demo consultations).
 
-First, run the development server:
+Built with **Next.js 14 (App Router) + TypeScript + Tailwind CSS + Prisma (SQLite)**. All mutations
+are React Server Actions; auth is a signed JWT in an httpOnly cookie.
+
+## Features
+
+### Patients
+- Home page with speciality shortcuts, top-rated doctors, latest articles and plan highlights
+- Doctor search with free-text, speciality and city filters
+- Doctor profile with weekly availability and real bookable slots (next 7 days, double-booking safe)
+- Book in-clinic or video appointments, cancel appointments
+- Premium plan subscribe / renew / cancel
+- Free demo consultation scheduling
+- Dashboard: appointments, doctor's notes, active plan, demo requests
+
+### Doctors
+- Self-service registration with practice details (goes live after admin verification)
+- Dashboard stats (pending / confirmed / completed appointments, earnings)
+- Confirm, complete (with consultation notes) or cancel appointments
+- Manage weekly availability windows and slot length
+- Edit practice profile, fee, experience and bio
+
+### Admin panel
+- Overview: platform counters, active-subscription revenue, latest bookings
+- Doctor verification (approve / reject)
+- All users, all appointments (confirm / cancel)
+- Articles & blogs CRUD (draft / published)
+- Premium plan CRUD
+- Demo consultation request pipeline (requested → scheduled → done / cancelled)
+
+## Getting started
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm install
+cp .env.example .env      # then set AUTH_SECRET
+npm run db:migrate         # creates prisma/dev.db
+npm run db:seed            # demo doctors, articles, plans, appointments
+npm run dev                # http://localhost:3000
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Demo logins
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+All seeded accounts use the password `password123`.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+| Role    | Email                      |
+| ------- | -------------------------- |
+| Admin   | `admin@practoclone.dev`    |
+| Patient | `patient@practoclone.dev`  |
+| Doctor  | `anita@practoclone.dev`    |
 
-## Learn More
+## Scripts
 
-To learn more about Next.js, take a look at the following resources:
+| Script | Purpose |
+| ------ | ------- |
+| `npm run dev` | Start the dev server |
+| `npm run build` / `npm start` | Production build and serve |
+| `npm run lint` / `npm run typecheck` | ESLint and TypeScript checks |
+| `npm run db:migrate` / `db:seed` / `db:reset` | Prisma migrations and seed data |
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Project structure
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+```
+prisma/schema.prisma      Data model (users, doctors, availability, appointments,
+                          articles, plans, subscriptions, demo requests)
+prisma/seed.ts            Demo data
+src/lib/auth.ts           Password hashing, JWT session cookie, role guards
+src/lib/slots.ts          Weekly availability -> bookable slot generation
+src/lib/actions/*         Server actions (auth, appointments, doctor, content, plans, demo)
+src/app/(public)          Home, doctors, articles, plans, demo, login, register
+src/app/dashboard         Patient dashboard
+src/app/doctor/*          Doctor dashboard
+src/app/admin/*           Admin panel
+```
 
-## Deploy on Vercel
+Switching to Postgres only needs the `datasource` provider plus `DATABASE_URL` changed in
+`prisma/schema.prisma`; no application code depends on SQLite.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+> Educational demo project. Not affiliated with Practo.

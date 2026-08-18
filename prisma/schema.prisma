@@ -1,0 +1,162 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  PATIENT
+  DOCTOR
+  ADMIN
+}
+
+enum DoctorStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum AppointmentMode {
+  IN_CLINIC
+  VIDEO
+}
+
+enum AppointmentStatus {
+  PENDING
+  CONFIRMED
+  CANCELLED
+  COMPLETED
+}
+
+enum SubscriptionStatus {
+  ACTIVE
+  CANCELLED
+  EXPIRED
+}
+
+enum DemoStatus {
+  REQUESTED
+  SCHEDULED
+  DONE
+  CANCELLED
+}
+
+model User {
+  id           String   @id @default(cuid())
+  name         String
+  email        String   @unique
+  phone        String?
+  passwordHash String
+  role         Role     @default(PATIENT)
+  createdAt    DateTime @default(now())
+
+  doctor            Doctor?
+  appointments      Appointment[]  @relation("PatientAppointments")
+  articles          Article[]
+  subscriptions     Subscription[]
+  demoRequests      DemoRequest[]
+}
+
+model Doctor {
+  id              String       @id @default(cuid())
+  userId          String       @unique
+  user            User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  specialty       String
+  city            String
+  clinicName      String
+  experienceYears Int          @default(0)
+  consultationFee Int          @default(500)
+  about           String       @default("")
+  photoUrl        String?
+  rating          Float        @default(4.5)
+  status          DoctorStatus @default(PENDING)
+  createdAt       DateTime     @default(now())
+
+  availabilities Availability[]
+  appointments   Appointment[]
+}
+
+model Availability {
+  id          String @id @default(cuid())
+  doctorId    String
+  doctor      Doctor @relation(fields: [doctorId], references: [id], onDelete: Cascade)
+  dayOfWeek   Int
+  startTime   String
+  endTime     String
+  slotMinutes Int    @default(30)
+
+  @@unique([doctorId, dayOfWeek, startTime])
+}
+
+model Appointment {
+  id          String            @id @default(cuid())
+  patientId   String
+  patient     User              @relation("PatientAppointments", fields: [patientId], references: [id], onDelete: Cascade)
+  doctorId    String
+  doctor      Doctor            @relation(fields: [doctorId], references: [id], onDelete: Cascade)
+  scheduledAt DateTime
+  mode        AppointmentMode   @default(IN_CLINIC)
+  status      AppointmentStatus @default(PENDING)
+  reason      String            @default("")
+  notes       String            @default("")
+  createdAt   DateTime          @default(now())
+
+  @@unique([doctorId, scheduledAt])
+}
+
+model Article {
+  id        String   @id @default(cuid())
+  slug      String   @unique
+  title     String
+  excerpt   String
+  content   String
+  category  String
+  coverUrl  String?
+  published Boolean  @default(false)
+  authorId  String
+  author    User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Plan {
+  id            String  @id @default(cuid())
+  slug          String  @unique
+  name          String
+  description   String  @default("")
+  priceInr      Int
+  intervalDays  Int     @default(30)
+  consultations Int     @default(0)
+  features      String  @default("")
+  active        Boolean @default(true)
+
+  subscriptions Subscription[]
+}
+
+model Subscription {
+  id        String             @id @default(cuid())
+  userId    String
+  user      User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  planId    String
+  plan      Plan               @relation(fields: [planId], references: [id], onDelete: Cascade)
+  status    SubscriptionStatus @default(ACTIVE)
+  startedAt DateTime           @default(now())
+  expiresAt DateTime
+}
+
+model DemoRequest {
+  id          String     @id @default(cuid())
+  name        String
+  email       String
+  phone       String
+  topic       String
+  preferredAt DateTime
+  status      DemoStatus @default(REQUESTED)
+  notes       String     @default("")
+  userId      String?
+  user        User?      @relation(fields: [userId], references: [id], onDelete: SetNull)
+  createdAt   DateTime   @default(now())
+}
