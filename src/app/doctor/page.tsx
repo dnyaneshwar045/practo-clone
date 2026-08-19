@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { requireDoctor } from "@/lib/auth";
-import { setAppointmentStatus } from "@/lib/actions/appointments";
+import { markFeeCollected, setAppointmentStatus } from "@/lib/actions/appointments";
+import { PaymentBadge } from "@/components/payments/PaymentBadge";
 import { SubmitButton } from "@/components/SubmitButton";
 import { Badge, Card, Empty, statusTone } from "@/components/ui";
 import { dateTime, inr } from "@/lib/format";
@@ -20,7 +21,10 @@ export default async function DoctorAppointmentsPage() {
     pending: appointments.filter((a) => a.status === "PENDING").length,
     confirmed: appointments.filter((a) => a.status === "CONFIRMED").length,
     completed: appointments.filter((a) => a.status === "COMPLETED").length,
-    earnings: appointments.filter((a) => a.status === "COMPLETED").length * doctor.consultationFee,
+    earnings: appointments.filter((a) => a.paymentStatus === "PAID").length * doctor.consultationFee,
+    unpaid: appointments.filter(
+      (a) => a.paymentStatus === "PENDING" && a.status !== "CANCELLED"
+    ).length,
   };
 
   return (
@@ -29,7 +33,11 @@ export default async function DoctorAppointmentsPage() {
         <Card><p className="text-sm text-slate-500">Pending</p><p className="text-2xl font-bold text-amber-600">{stats.pending}</p></Card>
         <Card><p className="text-sm text-slate-500">Confirmed</p><p className="text-2xl font-bold text-emerald-600">{stats.confirmed}</p></Card>
         <Card><p className="text-sm text-slate-500">Completed</p><p className="text-2xl font-bold text-sky-600">{stats.completed}</p></Card>
-        <Card><p className="text-sm text-slate-500">Earnings</p><p className="text-2xl font-bold text-slate-900">{inr(stats.earnings)}</p></Card>
+        <Card>
+          <p className="text-sm text-slate-500">Collected</p>
+          <p className="text-2xl font-bold text-slate-900">{inr(stats.earnings)}</p>
+          <p className="text-xs text-amber-600">{stats.unpaid} fee(s) pending</p>
+        </Card>
       </div>
 
       <Card>
@@ -54,7 +62,10 @@ export default async function DoctorAppointmentsPage() {
                       <p className="mt-1 text-sm text-slate-600">Reason: {appointment.reason}</p>
                     ) : null}
                   </div>
-                  <Badge tone={statusTone(appointment.status)}>{appointment.status}</Badge>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <Badge tone={statusTone(appointment.status)}>{appointment.status}</Badge>
+                    <PaymentBadge status={appointment.paymentStatus} method={appointment.paymentMethod} />
+                  </div>
                 </div>
 
                 {appointment.status !== "CANCELLED" && appointment.status !== "COMPLETED" ? (
@@ -81,6 +92,12 @@ export default async function DoctorAppointmentsPage() {
                       <input type="hidden" name="status" value="CANCELLED" />
                       <SubmitButton variant="danger">Cancel</SubmitButton>
                     </form>
+                    {appointment.paymentStatus === "PENDING" ? (
+                      <form action={markFeeCollected}>
+                        <input type="hidden" name="id" value={appointment.id} />
+                        <SubmitButton variant="ghost">Fee collected at clinic</SubmitButton>
+                      </form>
+                    ) : null}
                   </div>
                 ) : null}
               </li>

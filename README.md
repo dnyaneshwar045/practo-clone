@@ -14,7 +14,8 @@ are React Server Actions; auth is a signed JWT in an httpOnly cookie.
 - Doctor search with free-text, speciality and city filters
 - Doctor profile with weekly availability and real bookable slots (next 7 days, double-booking safe)
 - Book in-clinic or video appointments, cancel appointments
-- Premium plan subscribe / renew / cancel
+- Pay the consultation fee online (Razorpay) or choose cash/UPI at the clinic, and retry an unfinished payment from the dashboard
+- Premium plan subscribe / renew / cancel, paid through Razorpay
 - Free demo consultation scheduling
 - Dashboard: appointments, doctor's notes, active plan, demo requests
 
@@ -22,11 +23,12 @@ are React Server Actions; auth is a signed JWT in an httpOnly cookie.
 - Self-service registration with practice details (goes live after admin verification)
 - Dashboard stats (pending / confirmed / completed appointments, earnings)
 - Confirm, complete (with consultation notes) or cancel appointments
+- Mark a pay-at-clinic consultation fee as collected
 - Manage weekly availability windows and slot length
 - Edit practice profile, fee, experience and bio
 
 ### Admin panel
-- Overview: platform counters, active-subscription revenue, latest bookings
+- Overview: platform counters, active-subscription revenue, collected online payments, recent payment orders, latest bookings
 - Doctor verification (approve / reject)
 - All users, all appointments (confirm / cancel)
 - Articles & blogs CRUD (draft / published)
@@ -42,6 +44,16 @@ npm run db:migrate         # creates prisma/dev.db
 npm run db:seed            # demo doctors, articles, plans, appointments
 npm run dev                # http://localhost:3000
 ```
+
+## Payments (Razorpay)
+
+Set `RAZORPAY_KEY_ID` / `RAZORPAY_KEY_SECRET` (test keys from the Razorpay dashboard) in `.env` to
+run real checkout: the server creates a Razorpay order, the browser opens Razorpay checkout and the
+returned signature is verified server-side before the appointment or subscription is marked paid.
+
+With both variables empty the app runs a clearly labelled **simulated gateway** instead — orders are
+prefixed `order_demo_`, no card is charged, and the same verification/activation path runs so the
+flows are testable locally.
 
 ## Demo logins
 

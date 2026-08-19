@@ -2,6 +2,8 @@ import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { requireRole } from "@/lib/auth";
 import { cancelAppointment } from "@/lib/actions/appointments";
+import { PayNowForm } from "@/components/payments/PayNowForm";
+import { PaymentBadge } from "@/components/payments/PaymentBadge";
 import { cancelSubscription } from "@/lib/actions/plans";
 import { SubmitButton } from "@/components/SubmitButton";
 import { Badge, Card, Empty, SectionTitle, statusTone } from "@/components/ui";
@@ -12,7 +14,7 @@ export const dynamic = "force-dynamic";
 export default async function PatientDashboard({
   searchParams,
 }: {
-  searchParams: { booked?: string; subscribed?: string };
+  searchParams: { booked?: string; subscribed?: string; paid?: string };
 }) {
   const user = await requireRole("PATIENT", "ADMIN");
 
@@ -53,6 +55,9 @@ export default async function PatientDashboard({
       {searchParams.subscribed ? (
         <p className="rounded-lg bg-emerald-50 px-4 py-3 text-sm text-emerald-700">Your premium plan is now active.</p>
       ) : null}
+      {searchParams.paid ? (
+        <p className="rounded-lg bg-emerald-50 px-4 py-3 text-sm text-emerald-700">Payment received. Thank you!</p>
+      ) : null}
 
       <section className="grid gap-4 lg:grid-cols-3">
         <Card className="lg:col-span-2">
@@ -77,9 +82,17 @@ export default async function PatientDashboard({
                     {appointment.notes ? (
                       <p className="mt-1 text-sm text-slate-500">Doctor&apos;s note: {appointment.notes}</p>
                     ) : null}
+                    <p className="mt-1 text-sm text-slate-500">
+                      {inr(appointment.doctor.consultationFee)} ·{" "}
+                      {appointment.paymentMethod === "ONLINE" ? "Online payment" : "Pay at clinic"}
+                    </p>
                   </div>
-                  <div className="flex items-center gap-3">
+                  <div className="flex flex-wrap items-center gap-3">
                     <Badge tone={statusTone(appointment.status)}>{appointment.status}</Badge>
+                    <PaymentBadge status={appointment.paymentStatus} method={appointment.paymentMethod} />
+                    {appointment.paymentStatus === "PENDING" && appointment.status !== "CANCELLED" ? (
+                      <PayNowForm appointmentId={appointment.id} fee={appointment.doctor.consultationFee} />
+                    ) : null}
                     {["PENDING", "CONFIRMED"].includes(appointment.status) ? (
                       <form action={cancelAppointment}>
                         <input type="hidden" name="id" value={appointment.id} />

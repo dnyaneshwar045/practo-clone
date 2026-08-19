@@ -1,7 +1,9 @@
+import Image from "next/image";
 import { prisma } from "@/lib/prisma";
 import { DoctorCard } from "@/components/DoctorCard";
+import { IMAGES, photo } from "@/lib/images";
 import { DoctorSearchForm } from "@/components/forms/DoctorSearchForm";
-import { Empty, SectionTitle } from "@/components/ui";
+import { Empty } from "@/components/ui";
 
 export const dynamic = "force-dynamic";
 
@@ -34,7 +36,24 @@ export default async function DoctorsPage({
 
   return (
     <div className="space-y-6">
-      <SectionTitle title="Find doctors" subtitle={`${doctors.length} doctor(s) available`} />
+      <section className="relative overflow-hidden rounded-3xl bg-slate-900 px-5 py-8 text-white shadow-xl sm:px-8 sm:py-10">
+        <Image
+          src={photo(IMAGES.hospitalWard, 1400, 500)}
+          alt=""
+          fill
+          priority
+          sizes="100vw"
+          className="object-cover opacity-40"
+        />
+        <div className="absolute inset-0 bg-gradient-to-r from-sky-900/90 to-cyan-700/50" />
+        <div className="relative">
+          <h1 className="text-2xl font-bold sm:text-3xl">Find doctors near you</h1>
+          <p className="mt-2 text-sm text-sky-50/90">
+            {doctors.length} verified doctor(s) available for video and in-clinic consultations
+          </p>
+        </div>
+      </section>
+
       <DoctorSearchForm specialties={specialties} cities={cities} current={{ q, specialty, city }} />
 
       {doctors.length === 0 ? (

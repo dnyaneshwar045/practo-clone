@@ -32,9 +32,27 @@ enum AppointmentStatus {
 }
 
 enum SubscriptionStatus {
+  PENDING
   ACTIVE
   CANCELLED
   EXPIRED
+}
+
+enum PaymentMethod {
+  ONLINE
+  CASH_AT_CLINIC
+}
+
+enum PaymentStatus {
+  PENDING
+  PAID
+  FAILED
+  REFUNDED
+}
+
+enum PaymentPurpose {
+  APPOINTMENT
+  SUBSCRIPTION
 }
 
 enum DemoStatus {
@@ -58,6 +76,7 @@ model User {
   articles          Article[]
   subscriptions     Subscription[]
   demoRequests      DemoRequest[]
+  payments          Payment[]
 }
 
 model Doctor {
@@ -104,6 +123,10 @@ model Appointment {
   notes       String            @default("")
   createdAt   DateTime          @default(now())
 
+  paymentMethod PaymentMethod @default(CASH_AT_CLINIC)
+  paymentStatus PaymentStatus @default(PENDING)
+  payment       Payment?
+
   @@unique([doctorId, scheduledAt])
 }
 
@@ -145,6 +168,35 @@ model Subscription {
   status    SubscriptionStatus @default(ACTIVE)
   startedAt DateTime           @default(now())
   expiresAt DateTime
+
+  payment Payment?
+}
+
+/// A Razorpay order (or a simulated one when Razorpay keys are absent) for an
+/// appointment consultation fee or a premium plan subscription.
+model Payment {
+  id       String         @id @default(cuid())
+  userId   String
+  user     User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  purpose  PaymentPurpose
+  method   PaymentMethod  @default(ONLINE)
+  provider String         @default("razorpay")
+  amountInr Int
+  currency String         @default("INR")
+  status   PaymentStatus  @default(PENDING)
+
+  orderId   String  @unique
+  paymentId String?
+  signature String?
+
+  appointmentId String?      @unique
+  appointment   Appointment? @relation(fields: [appointmentId], references: [id], onDelete: SetNull)
+
+  subscriptionId String?       @unique
+  subscription   Subscription? @relation(fields: [subscriptionId], references: [id], onDelete: SetNull)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model DemoRequest {

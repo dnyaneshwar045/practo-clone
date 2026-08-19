@@ -1,6 +1,8 @@
+import Image from "next/image";
 import { getSessionUser } from "@/lib/auth";
 import { DemoForm } from "@/components/forms/DemoForm";
 import { Card } from "@/components/ui";
+import { IMAGES, photo } from "@/lib/images";
 
 export const dynamic = "force-dynamic";
 
@@ -30,6 +32,20 @@ export default async function DemoPage() {
             </li>
           ))}
         </ol>
+
+        <div className="relative mt-8 hidden h-64 overflow-hidden rounded-3xl shadow-xl lg:block">
+          <Image
+            src={photo(IMAGES.videoConsultation, 900, 700)}
+            alt="Care coordinator on a video call"
+            fill
+            sizes="(max-width: 1024px) 100vw, 50vw"
+            className="object-cover"
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-slate-900/70 to-transparent" />
+          <p className="absolute bottom-4 left-5 right-5 text-sm font-medium text-white">
+            Free 15-minute call · no payment required
+          </p>
+        </div>
       </div>
 
       <Card>
