@@ -1,7 +1,9 @@
+import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { dateOnly } from "@/lib/format";
+import { articleCover } from "@/lib/images";
 
 export const dynamic = "force-dynamic";
 
@@ -30,6 +32,21 @@ export default async function ArticlePage({ params }: { params: { slug: string }
         By {article.author.name} · {dateOnly(article.createdAt)}
       </p>
 
+      <div className="relative mt-6 h-56 overflow-hidden rounded-3xl shadow-lg sm:h-80">
+        <Image
+          src={articleCover(article, 1200, 700)}
+          alt={article.title}
+          fill
+          priority
+          sizes="(max-width: 768px) 100vw, 768px"
+          className="object-cover"
+        />
+      </div>
+
+      <p className="mt-6 rounded-2xl border-l-4 border-sky-500 bg-white/80 px-4 py-3 text-[15px] italic text-slate-600">
+        {article.excerpt}
+      </p>
+
       <div className="mt-8 space-y-4 text-[15px] leading-7 text-slate-700">
         {article.content.split("\n").filter(Boolean).map((paragraph, index) => (
           <p key={index}>{paragraph}</p>
@@ -39,11 +56,22 @@ export default async function ArticlePage({ params }: { params: { slug: string }
       {related.length > 0 ? (
         <div className="mt-12 border-t border-slate-200 pt-6">
           <h2 className="font-semibold text-slate-900">More on {article.category}</h2>
-          <ul className="mt-3 space-y-2 text-sm">
+          <ul className="mt-3 grid gap-3 sm:grid-cols-3">
             {related.map((item) => (
               <li key={item.id}>
-                <Link href={`/articles/${item.slug}`} className="text-sky-700 hover:underline">
-                  {item.title}
+                <Link href={`/articles/${item.slug}`} className="group block">
+                  <span className="relative block h-24 overflow-hidden rounded-xl">
+                    <Image
+                      src={articleCover(item, 400, 260)}
+                      alt={item.title}
+                      fill
+                      sizes="(max-width: 640px) 100vw, 33vw"
+                      className="object-cover transition duration-500 group-hover:scale-105"
+                    />
+                  </span>
+                  <span className="mt-2 block text-sm font-medium text-slate-700 group-hover:text-sky-700">
+                    {item.title}
+                  </span>
                 </Link>
               </li>
             ))}

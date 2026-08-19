@@ -1,7 +1,24 @@
 import type { Availability } from "@prisma/client";
 import { APP_TIMEZONE, APP_UTC_OFFSET_MINUTES } from "@/lib/format";
 
-export type Slot = { iso: string; label: string };
+export type SlotPeriod = "Morning" | "Afternoon" | "Evening";
+
+export type Slot = {
+  iso: string;
+  /** Full "Thu, 20 Aug, 10:00 am" label. */
+  label: string;
+  /** Clinic-local calendar day ("2026-08-20"), used to group slots per date. */
+  dateKey: string;
+  dayLabel: string;
+  dateLabel: string;
+  timeLabel: string;
+  period: SlotPeriod;
+};
+
+const periodOf = (minutes: number): SlotPeriod =>
+  minutes < 12 * 60 ? "Morning" : minutes < 17 * 60 ? "Afternoon" : "Evening";
+
+const pad = (value: number) => String(value).padStart(2, "0");
 
 const toMinutes = (time: string) => {
   const [h, m] = time.split(":").map(Number);
@@ -59,10 +76,23 @@ export function buildSlots(
             minute: "2-digit",
             timeZone: APP_TIMEZONE,
           }),
+          dateKey: `${year}-${pad(month + 1)}-${pad(day)}`,
+          dayLabel: start.toLocaleString("en-IN", { weekday: "short", timeZone: APP_TIMEZONE }),
+          dateLabel: start.toLocaleString("en-IN", {
+            day: "numeric",
+            month: "short",
+            timeZone: APP_TIMEZONE,
+          }),
+          timeLabel: start.toLocaleString("en-IN", {
+            hour: "numeric",
+            minute: "2-digit",
+            timeZone: APP_TIMEZONE,
+          }),
+          period: periodOf(minute),
         });
       }
     }
   }
 
-  return slots.sort((a, b) => a.iso.localeCompare(b.iso)).slice(0, 60);
+  return slots.sort((a, b) => a.iso.localeCompare(b.iso)).slice(0, 140);
 }

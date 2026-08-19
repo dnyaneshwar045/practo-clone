@@ -2,7 +2,7 @@ import type { ReactNode } from "react";
 
 export function Card({ children, className = "" }: { children: ReactNode; className?: string }) {
   return (
-    <div className={`rounded-xl border border-slate-200 bg-white p-5 shadow-sm ${className}`}>
+    <div className={`rounded-2xl border border-slate-200/80 bg-white/95 p-5 shadow-sm ${className}`}>
       {children}
     </div>
   );
@@ -25,9 +25,10 @@ export function Badge({ children, tone = "slate" }: { children: ReactNode; tone?
 }
 
 export function statusTone(status: string): keyof typeof badgeTones {
-  if (["CONFIRMED", "APPROVED", "ACTIVE", "SCHEDULED"].includes(status)) return "green";
+  if (["CONFIRMED", "APPROVED", "ACTIVE", "SCHEDULED", "PAID"].includes(status)) return "green";
   if (["PENDING", "REQUESTED"].includes(status)) return "amber";
-  if (["CANCELLED", "REJECTED", "EXPIRED"].includes(status)) return "red";
+  if (["CANCELLED", "REJECTED", "EXPIRED", "FAILED"].includes(status)) return "red";
+  if (status === "REFUNDED") return "slate";
   return "blue";
 }
 

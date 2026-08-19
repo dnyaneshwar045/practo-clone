@@ -1,5 +1,6 @@
 import Link from "next/link";
-import { Badge, Card } from "@/components/ui";
+import { Avatar } from "@/components/Avatar";
+import { Badge } from "@/components/ui";
 import { inr } from "@/lib/format";
 
 export type DoctorCardData = {
@@ -10,17 +11,19 @@ export type DoctorCardData = {
   experienceYears: number;
   consultationFee: number;
   rating: number;
+  photoUrl?: string | null;
   user: { name: string };
 };
 
 export function DoctorCard({ doctor }: { doctor: DoctorCardData }) {
   return (
-    <Card className="flex flex-col gap-3">
-      <div className="flex items-start justify-between gap-3">
-        <div>
-          <h3 className="font-semibold text-slate-900">Dr. {doctor.user.name}</h3>
-          <p className="text-sm text-sky-700">{doctor.specialty}</p>
-          <p className="mt-1 text-sm text-slate-500">
+    <div className="card-3d flex flex-col gap-3 rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm">
+      <div className="flex items-start gap-3">
+        <Avatar doctorId={doctor.id} photoUrl={doctor.photoUrl ?? null} name={doctor.user.name} size={64} />
+        <div className="min-w-0 flex-1">
+          <h3 className="truncate font-semibold text-slate-900">Dr. {doctor.user.name}</h3>
+          <p className="text-sm font-medium text-sky-700">{doctor.specialty}</p>
+          <p className="mt-0.5 truncate text-sm text-slate-500">
             {doctor.clinicName}, {doctor.city}
           </p>
         </div>
@@ -28,16 +31,19 @@ export function DoctorCard({ doctor }: { doctor: DoctorCardData }) {
       </div>
 
       <div className="flex flex-wrap gap-2 text-xs text-slate-600">
-        <span className="rounded-full bg-slate-100 px-2 py-1">{doctor.experienceYears} yrs experience</span>
-        <span className="rounded-full bg-slate-100 px-2 py-1">{inr(doctor.consultationFee)} consultation</span>
+        <span className="rounded-full bg-slate-100 px-2.5 py-1">{doctor.experienceYears} yrs experience</span>
+        <span className="rounded-full bg-emerald-50 px-2.5 py-1 text-emerald-700">
+          {inr(doctor.consultationFee)} consultation
+        </span>
+        <span className="rounded-full bg-sky-50 px-2.5 py-1 text-sky-700">Video &amp; in-clinic</span>
       </div>
 
       <Link
         href={`/doctors/${doctor.id}`}
-        className="mt-auto inline-flex justify-center rounded-lg bg-sky-600 px-4 py-2 text-sm font-medium text-white hover:bg-sky-700"
+        className="mt-auto inline-flex justify-center rounded-xl bg-gradient-to-r from-sky-600 to-cyan-500 px-4 py-2.5 text-sm font-semibold text-white shadow-lg shadow-sky-600/20 transition hover:brightness-105"
       >
         View profile &amp; book
       </Link>
-    </Card>
+    </div>
   );
 }

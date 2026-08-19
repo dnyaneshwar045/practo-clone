@@ -27,6 +27,17 @@ export default async function AdminOverviewPage() {
       prisma.subscription.findMany({ where: { status: "ACTIVE" }, include: { plan: true } }),
     ]);
 
+  const payments = await prisma.payment.findMany({
+    include: { user: { select: { name: true } } },
+    orderBy: { createdAt: "desc" },
+    take: 8,
+  });
+
+  const collected = await prisma.payment.aggregate({
+    where: { status: "PAID" },
+    _sum: { amountInr: true },
+  });
+
   const mrr = revenueRows.reduce((total, sub) => total + sub.plan.priceInr, 0);
 
   const cards = [
@@ -53,9 +64,35 @@ export default async function AdminOverviewPage() {
         ))}
       </div>
 
+      <div className="grid gap-4 sm:grid-cols-2">
+        <Card>
+          <p className="text-sm text-slate-500">Subscription revenue (active plans)</p>
+          <p className="text-3xl font-bold text-sky-700">{inr(mrr)}</p>
+        </Card>
+        <Card>
+          <p className="text-sm text-slate-500">Online payments collected</p>
+          <p className="text-3xl font-bold text-emerald-700">{inr(collected._sum.amountInr ?? 0)}</p>
+        </Card>
+      </div>
+
       <Card>
-        <p className="text-sm text-slate-500">Subscription revenue (active plans)</p>
-        <p className="text-3xl font-bold text-sky-700">{inr(mrr)}</p>
+        <h2 className="mb-4 font-semibold text-slate-900">Recent payments</h2>
+        {payments.length === 0 ? (
+          <p className="text-sm text-slate-500">No payment orders yet.</p>
+        ) : (
+          <ul className="divide-y divide-slate-100 text-sm">
+            {payments.map((payment) => (
+              <li key={payment.id} className="flex flex-wrap items-center justify-between gap-2 py-3">
+                <span className="text-slate-700">
+                  {payment.user.name} · {payment.purpose.toLowerCase()}
+                </span>
+                <span className="font-mono text-xs text-slate-400">{payment.orderId}</span>
+                <span className="text-slate-600">{inr(payment.amountInr)}</span>
+                <Badge tone={statusTone(payment.status)}>{payment.status}</Badge>
+              </li>
+            ))}
+          </ul>
+        )}
       </Card>
 
       <Card>

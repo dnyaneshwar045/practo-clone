@@ -1,8 +1,9 @@
 import { prisma } from "@/lib/prisma";
-import { cancelAppointment, setAppointmentStatus } from "@/lib/actions/appointments";
+import { cancelAppointment, markFeeCollected, setAppointmentStatus } from "@/lib/actions/appointments";
+import { PaymentBadge } from "@/components/payments/PaymentBadge";
 import { SubmitButton } from "@/components/SubmitButton";
 import { Badge, Card, Empty, statusTone } from "@/components/ui";
-import { dateTime } from "@/lib/format";
+import { dateTime, inr } from "@/lib/format";
 
 export const dynamic = "force-dynamic";
 
@@ -32,9 +33,20 @@ export default async function AdminAppointmentsPage() {
                   {dateTime(appointment.scheduledAt)} · {appointment.mode === "VIDEO" ? "Video" : "In clinic"} ·{" "}
                   {appointment.patient.email}
                 </p>
+                <p className="text-slate-500">
+                  {inr(appointment.doctor.consultationFee)} ·{" "}
+                  {appointment.paymentMethod === "ONLINE" ? "online" : "cash/UPI at clinic"}
+                </p>
               </div>
-              <div className="flex items-center gap-2">
+              <div className="flex flex-wrap items-center gap-2">
                 <Badge tone={statusTone(appointment.status)}>{appointment.status}</Badge>
+                <PaymentBadge status={appointment.paymentStatus} method={appointment.paymentMethod} />
+                {appointment.paymentStatus === "PENDING" && appointment.status !== "CANCELLED" ? (
+                  <form action={markFeeCollected}>
+                    <input type="hidden" name="id" value={appointment.id} />
+                    <SubmitButton variant="ghost">Mark fee collected</SubmitButton>
+                  </form>
+                ) : null}
                 {appointment.status === "PENDING" ? (
                   <form action={setAppointmentStatus}>
                     <input type="hidden" name="id" value={appointment.id} />

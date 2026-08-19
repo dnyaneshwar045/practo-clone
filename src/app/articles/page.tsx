@@ -1,7 +1,9 @@
+import Image from "next/image";
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
-import { Card, Empty, SectionTitle } from "@/components/ui";
-import { dateOnly } from "@/lib/format";
+import { ArticleCard } from "@/components/ArticleCard";
+import { Empty } from "@/components/ui";
+import { IMAGES, photo } from "@/lib/images";
 
 export const dynamic = "force-dynamic";
 
@@ -13,17 +15,42 @@ export default async function ArticlesPage({ searchParams }: { searchParams: { c
   });
 
   const categories = Array.from(
-    new Set((await prisma.article.findMany({ where: { published: true }, select: { category: true } })).map((a) => a.category))
+    new Set(
+      (await prisma.article.findMany({ where: { published: true }, select: { category: true } })).map(
+        (a) => a.category
+      )
+    )
   ).sort();
 
   return (
     <div className="space-y-6">
-      <SectionTitle title="Health library" subtitle="Articles and blogs reviewed by our doctors" />
+      <section className="relative overflow-hidden rounded-3xl bg-slate-900 px-5 py-9 text-white shadow-xl sm:px-8 sm:py-12">
+        <Image
+          src={photo(IMAGES.heroConsultation, 1400, 500)}
+          alt=""
+          fill
+          priority
+          sizes="100vw"
+          className="object-cover opacity-40"
+        />
+        <div className="absolute inset-0 bg-gradient-to-r from-slate-900/90 to-sky-700/50" />
+        <div className="relative">
+          <h1 className="text-2xl font-bold sm:text-3xl">Health library</h1>
+          <p className="mt-2 max-w-xl text-sm text-sky-50/90">
+            Articles and blogs written and reviewed by our doctors — nutrition, fitness, skin, mental
+            health and more.
+          </p>
+        </div>
+      </section>
 
-      <div className="flex flex-wrap gap-2 text-sm">
+      <div className="no-scrollbar -mx-1 flex gap-2 overflow-x-auto px-1 text-sm">
         <Link
           href="/articles"
-          className={`rounded-full px-3 py-1.5 ${!searchParams.category ? "bg-sky-600 text-white" : "bg-white text-slate-600 border border-slate-200"}`}
+          className={`whitespace-nowrap rounded-full px-4 py-2 transition ${
+            !searchParams.category
+              ? "bg-sky-600 text-white shadow-md shadow-sky-600/25"
+              : "border border-slate-200 bg-white text-slate-600 hover:border-sky-300"
+          }`}
         >
           All
         </Link>
@@ -31,8 +58,10 @@ export default async function ArticlesPage({ searchParams }: { searchParams: { c
           <Link
             key={category}
             href={`/articles?category=${encodeURIComponent(category)}`}
-            className={`rounded-full px-3 py-1.5 ${
-              searchParams.category === category ? "bg-sky-600 text-white" : "bg-white text-slate-600 border border-slate-200"
+            className={`whitespace-nowrap rounded-full px-4 py-2 transition ${
+              searchParams.category === category
+                ? "bg-sky-600 text-white shadow-md shadow-sky-600/25"
+                : "border border-slate-200 bg-white text-slate-600 hover:border-sky-300"
             }`}
           >
             {category}
@@ -45,16 +74,7 @@ export default async function ArticlesPage({ searchParams }: { searchParams: { c
       ) : (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {articles.map((article) => (
-            <Link key={article.id} href={`/articles/${article.slug}`}>
-              <Card className="h-full transition hover:border-sky-400">
-                <p className="text-xs font-medium uppercase tracking-wide text-sky-700">{article.category}</p>
-                <h2 className="mt-1 font-semibold text-slate-900">{article.title}</h2>
-                <p className="mt-2 line-clamp-3 text-sm text-slate-500">{article.excerpt}</p>
-                <p className="mt-3 text-xs text-slate-400">
-                  {article.author.name} · {dateOnly(article.createdAt)}
-                </p>
-              </Card>
-            </Link>
+            <ArticleCard key={article.id} article={article} />
           ))}
         </div>
       )}

@@ -4,26 +4,37 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { getSessionUser } from "@/lib/auth";
+import { startCheckout, type CheckoutSession } from "@/lib/payments";
 
-export async function subscribe(formData: FormData) {
+export type SubscribeState = { error?: string; checkout?: CheckoutSession };
+
+export async function subscribe(_prev: SubscribeState, formData: FormData): Promise<SubscribeState> {
   const user = await getSessionUser();
   const planId = String(formData.get("planId") ?? "");
   if (!user) redirect("/login?next=/plans");
 
   const plan = await prisma.plan.findUnique({ where: { id: planId } });
-  if (!plan || !plan.active) redirect("/plans?error=unavailable");
+  if (!plan || !plan.active) return { error: "This plan is no longer available" };
 
   const expiresAt = new Date();
   expiresAt.setDate(expiresAt.getDate() + plan.intervalDays);
 
-  await prisma.subscription.updateMany({
-    where: { userId: user.id, status: "ACTIVE" },
-    data: { status: "CANCELLED" },
+  const subscription = await prisma.subscription.create({
+    data: { userId: user.id, planId, expiresAt, status: "PENDING" },
   });
-  await prisma.subscription.create({ data: { userId: user.id, planId, expiresAt } });
+
+  const checkout = await startCheckout({
+    user,
+    purpose: "SUBSCRIPTION",
+    amountInr: plan.priceInr,
+    title: `${plan.name} plan`,
+    description: `${plan.intervalDays}-day premium care subscription`,
+    redirectTo: "/dashboard?subscribed=1&paid=1",
+    subscriptionId: subscription.id,
+  });
 
   revalidatePath("/dashboard");
-  redirect("/dashboard?subscribed=1");
+  return { checkout };
 }
 
 export async function cancelSubscription(formData: FormData) {
