@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { getSessionUser, requireRole } from "@/lib/auth";
+import { parseAppDateTime } from "@/lib/format";
 import type { FormState } from "@/lib/actions/auth";
 
 const demoSchema = z.object({
@@ -18,7 +19,7 @@ export async function requestDemo(_prev: FormState, formData: FormData): Promise
   const parsed = demoSchema.safeParse(Object.fromEntries(formData));
   if (!parsed.success) return { error: parsed.error.issues[0].message };
 
-  const preferredAt = new Date(parsed.data.preferredAt);
+  const preferredAt = parseAppDateTime(parsed.data.preferredAt);
   if (Number.isNaN(preferredAt.getTime()) || preferredAt <= new Date()) {
     return { error: "Preferred time must be in the future" };
   }

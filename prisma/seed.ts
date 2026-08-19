@@ -3,6 +3,17 @@ import bcrypt from "bcryptjs";
 
 const prisma = new PrismaClient();
 
+const APP_UTC_OFFSET_MINUTES = 330;
+
+/** An instant at the given clinic-local (IST) wall-clock time, `daysFromNow` days away. */
+function clinicTime(daysFromNow: number, hour: number, minute = 0) {
+  const now = new Date(Date.now() + APP_UTC_OFFSET_MINUTES * 60_000);
+  return new Date(
+    Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() + daysFromNow, hour, minute) -
+      APP_UTC_OFFSET_MINUTES * 60_000
+  );
+}
+
 const doctors = [
   {
     name: "Anita Deshmukh",
@@ -223,30 +234,22 @@ async function main() {
     await prisma.article.create({ data: { ...article, published: true, authorId: admin.id } });
   }
 
-  const tomorrow = new Date();
-  tomorrow.setDate(tomorrow.getDate() + 1);
-  tomorrow.setHours(11, 0, 0, 0);
-
   await prisma.appointment.create({
     data: {
       patientId: patient.id,
       doctorId: createdDoctors[0].id,
-      scheduledAt: tomorrow,
+      scheduledAt: clinicTime(1, 11),
       mode: "VIDEO",
       status: "CONFIRMED",
       reason: "Recurring acne breakouts for the last 3 months",
     },
   });
 
-  const lastWeek = new Date();
-  lastWeek.setDate(lastWeek.getDate() - 7);
-  lastWeek.setHours(18, 0, 0, 0);
-
   await prisma.appointment.create({
     data: {
       patientId: patient.id,
       doctorId: createdDoctors[1].id,
-      scheduledAt: lastWeek,
+      scheduledAt: clinicTime(-7, 18),
       mode: "IN_CLINIC",
       status: "COMPLETED",
       reason: "Annual health check-up",
@@ -260,16 +263,13 @@ async function main() {
     data: { userId: patient.id, planId: createdPlans[1].id, expiresAt },
   });
 
-  const preferredAt = new Date();
-  preferredAt.setDate(preferredAt.getDate() + 2);
-  preferredAt.setHours(19, 30, 0, 0);
   await prisma.demoRequest.create({
     data: {
       name: "Sunita Patil",
       email: "sunita@example.com",
       phone: "9899999999",
       topic: "Need guidance on which specialist to consult for persistent back pain",
-      preferredAt,
+      preferredAt: clinicTime(2, 19, 30),
     },
   });
 
